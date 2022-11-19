@@ -35,6 +35,10 @@ dependencies:
   cloud_firestore:
   google_fonts:
   share_plus:
+  image_picker:
+  flutter_native_image:
+  screenshot:
+  path_provider:
 
 
   # The following adds the Cupertino Icons font to your application.

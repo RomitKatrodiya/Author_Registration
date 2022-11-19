@@ -1,3 +1,4 @@
+import 'package:author_registration_app/screens/details_page.dart';
 import 'package:author_registration_app/screens/edit_add_author_page.dart';
 import 'package:author_registration_app/screens/home_page.dart';
 import 'package:author_registration_app/screens/splash_screen.dart';
@@ -17,6 +18,7 @@ void main() async {
         "splash_screen": (context) => const SplashScreen(),
         "/": (context) => const HomePage(),
         "edit_add_author_page": (context) => const EditAddAuthorPage(),
+        "details_page": (context) => const DetailPage(),
       },
     ),
   );

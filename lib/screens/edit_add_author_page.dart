@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_image/flutter_native_image.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:image_picker/image_picker.dart';
 import '../global.dart';
 import '../helpers/cloud_firestore_helper.dart';
 
@@ -15,15 +19,19 @@ class EditAddAuthorPage extends StatefulWidget {
 class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController authorController = TextEditingController();
+  final TextEditingController bookController = TextEditingController();
 
-  String? title;
-  String? description;
+  String? author;
+  String? book;
+
+  Uint8List? image;
+  Uint8List? decodedImage;
+  String imageString = "";
+  bool isNew = false;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     clearControllersAndVar();
   }
@@ -34,8 +42,10 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
     if (Global.isUpdate) {
       res = ModalRoute.of(context)!.settings.arguments as QueryDocumentSnapshot;
 
-      titleController.text = "${res["name"]}";
-      descriptionController.text = "${res["book"]}";
+      authorController.text = "${res["name"]}";
+      bookController.text = "${res["book"]}";
+
+      isNew == false ? image = base64Decode(res["image"]) : null;
     }
     return Scaffold(
       backgroundColor: Colors.black,
@@ -44,23 +54,41 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
         actions: [
           TextButton(
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                formKey.currentState!.save();
+              if (image != null) {
+                if (formKey.currentState!.validate()) {
+                  formKey.currentState!.save();
+                  imageString = base64Encode(image!);
 
-                Map<String, dynamic> data = {
-                  "name": title,
-                  "book": description,
-                };
+                  Map<String, dynamic> data = {
+                    "name": author,
+                    "book": book,
+                    "image": imageString
+                  };
 
-                if (Global.isUpdate) {
-                  await CloudFirestoreHelper.cloudFirestoreHelper
-                      .updateRecords(data: data, id: res!.id);
-                } else {
-                  CloudFirestoreHelper.cloudFirestoreHelper
-                      .insertData(data: data);
+                  if (Global.isUpdate) {
+                    await CloudFirestoreHelper.cloudFirestoreHelper
+                        .updateRecords(data: data, id: res!.id);
+                  } else {
+                    await CloudFirestoreHelper.cloudFirestoreHelper
+                        .insertData(data: data);
+                  }
+
+                  Navigator.of(context).pop();
                 }
-
-                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      "Add image First..",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
               }
             },
             child: Text(
@@ -81,10 +109,63 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
           child: Form(
             key: formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Container(
+                        height: 220,
+                        width: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(13),
+                          image: DecorationImage(
+                            fit: BoxFit.cover,
+                            image: image != null
+                                ? MemoryImage(
+                                    image!,
+                                  )
+                                : const NetworkImage(
+                                    "https://media.istockphoto.com/id/1189849703/vector/01-open-book-and-creative-paper-airplanes-teamwork-paper-art-style.jpg?s=612x612&w=0&k=20&c=xeXSZaFfGv5CoNgWhZRJzlCWSMijXWrqVjEzfNlbpKE=",
+                                  ) as ImageProvider,
+                          ),
+                        ),
+                      ),
+                    ),
+                    FloatingActionButton(
+                      mini: true,
+                      shape: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      backgroundColor: Colors.white.withOpacity(0.9),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+
+                        XFile? pickImage =
+                            await picker.pickImage(source: ImageSource.gallery);
+
+                        if (pickImage != null) {
+                          File compressedImage =
+                              await FlutterNativeImage.compressImage(
+                                  pickImage.path);
+                          image = await compressedImage.readAsBytes();
+                          isNew = true;
+                          imageString = base64Encode(image!);
+                        }
+                        setState(() {});
+                      },
+                      child: Icon(
+                        (Global.isUpdate) ? Icons.edit : Icons.add,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 25),
                 Text(
-                  "Author :",
+                  "Author",
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 22,
@@ -94,40 +175,39 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
                 const SizedBox(height: 10),
                 TextFormField(
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
                   ),
-                  controller: titleController,
+                  controller: authorController,
                   decoration: textFieldDecoration("Author name"),
                   onSaved: (val) {
-                    title = val;
+                    author = val;
                   },
                   validator: (val) =>
                       (val!.isEmpty) ? "Enter Author Name First..." : null,
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Books :",
+                  "Book",
                   style: GoogleFonts.poppins(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 22,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
                   style: GoogleFonts.poppins(
-                    fontSize: 19,
+                    fontSize: 20,
                     fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 25,
-                  controller: descriptionController,
-                  decoration: textFieldDecoration("Books"),
+                  controller: bookController,
+                  decoration: textFieldDecoration("Book name"),
                   onSaved: (val) {
-                    description = val;
+                    book = val;
                   },
                   validator: (val) =>
-                      (val!.isEmpty) ? "Enter Books First..." : null,
+                      (val!.isEmpty) ? "Enter Book Name First..." : null,
                 ),
               ],
             ),
@@ -139,6 +219,7 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
 
   textFieldDecoration(String hint) {
     return InputDecoration(
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
       hintText: hint,
       fillColor: ([...Colors.primaries]..shuffle()).first.shade100,
       filled: true,
@@ -146,10 +227,11 @@ class _EditAddAuthorPageState extends State<EditAddAuthorPage> {
   }
 
   clearControllersAndVar() {
-    titleController.clear();
-    descriptionController.clear();
+    authorController.clear();
+    bookController.clear();
 
-    title = null;
-    description = null;
+    author = null;
+    image = null;
+    book = null;
   }
 }
