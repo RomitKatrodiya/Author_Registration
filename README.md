@@ -12,7 +12,7 @@
 
 ## Output GIF
 
-<img src="https://github.com/RomitKatrodiya/Author_Registration/blob/master/screenshots/Author-Registration-App-2.GIF" style=" height:600px; " data-target="animated-image.originalImage"><img src="https://github.com/RomitKatrodiya/Author_Registration/blob/master/screenshots/Author-Registration-App-3.GIF" style=" height:600px; " data-target="animated-image.originalImage">
+<img src="https://github.com/RomitKatrodiya/Author_Registration/blob/master/screenshots/Author-Registration-App-2.GIF" style=" height:600px; " data-target="animated-image.originalImage"> <img src="https://github.com/RomitKatrodiya/Author_Registration/blob/master/screenshots/Author-Registration-App-3.GIF" style=" height:600px; " data-target="animated-image.originalImage">
 
 ## App UI
 
